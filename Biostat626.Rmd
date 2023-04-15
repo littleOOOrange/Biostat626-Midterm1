@@ -1,0 +1,111 @@
+---
+title: "Biostat626_hw1"
+output: pdf_document
+date: "2023-02-06"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library("tidyverse")
+```
+
+# Q1
+## (i).
+```{r}
+set.seed(33)
+BuildData <- function(N,p){
+  X <- matrix(rnorm(N))
+  for(i in 1:(p-1)){
+    X <- cbind(X,matrix(rnorm(N)))
+  }
+  coe <- rnorm(p)
+  e <- rnorm(N,mean=0, sd=1)
+  y <- X %*% coe + e
+  myData = data.frame(y,X)
+  return(myData)
+}
+
+leastSquare <- function(N,data){
+  y_data <- data$y
+  model <- lm(y ~.,data)
+  LS_solution = sum((y_data - fitted(model))^2)
+  TrainError = LS_solution/N
+  result <- c(LS_solution,TrainError)
+  return (result)
+}
+
+df_total = data.frame()
+for(i in seq(from=10, to=100, by=10)){
+  dataset <- BuildData(125,i)
+  df <- data.frame(t(leastSquare(125,dataset)))
+  df_total <- rbind(df_total,df)
+}
+colnames(df_total) <- c("LeastSquare Solution","Training Error")
+df_total
+```
+
+## (ii).
+```{r}
+set.seed(33)
+crossValidation <- function(k,data){
+  #cv_MSE = rep(0, k)
+  shuffled_data <- data[sample(nrow(data)),]
+  folds <- cut(seq(1,nrow(shuffled_data)),breaks=k,labels=FALSE)
+  loss <- c()
+  for(i in 1:k){
+    in_testIndex <- which(folds==i,arr.ind=TRUE)
+    test_data <- shuffled_data[in_testIndex, ]
+    train_data <- shuffled_data[-in_testIndex, ]
+    CV_model <- lm(y~.,train_data)
+    pred_y <- predict(CV_model,newdata = test_data)
+    CV_err <- test_data$y - pred_y
+    loss  <- append(loss,CV_err^2) 
+  }
+  epe <- sum(loss)/125
+  return(epe)
+}
+
+epe_set2 <- c()
+for(i in seq(from=10, to=100, by=10)){
+  CV_dataset <- BuildData(125,i)
+  epe_set2 <- c(epe_set2,crossValidation(2,CV_dataset))
+  print(crossValidation(2,CV_dataset))
+}
+#epe_set2
+```
+Analysis of this warning will be shown after the plot in (iv).
+
+## (iii).
+```{r}
+set.seed(33)
+epe_set10 <- c()
+for(i in seq(from=10, to=100, by=10)){
+  CV_dataset <- BuildData(125,i)
+  epe_set10 <- c(epe_set10,crossValidation(10,CV_dataset))
+  #print(crossValidation(10,CV_dataset))
+}
+epe_set10
+```
+(iv).
+```{r}
+library(ggplot2)
+library(reshape)
+```
+
+```{r}
+set.seed(33)
+complexity <- c(10,20,30,40,50,60,70,80,90,100)
+df_epe2 <- data.frame(complexity[1:6],epe_set2[1:6])
+colnames(df_epe2) <- c('complexity','epe_set2')
+df_other <- data.frame(complexity,epe_set10,df_total$`Training Error`)
+colnames(df_other) <- c('complexity','epe_set10','TrainingError')
+Molten <- melt(df_other, id.vars = "complexity")
+ggplot()+geom_line(data=df_epe2, aes(x=complexity, y=epe_set2), color='green') + 
+geom_line(data=Molten, aes(x=complexity, y=value,colour = variable))
+
+```
+When we check the EPE for 2-fold CV, we find that we get extremely large EPE value for  p >= 70 and warnings from p=70. The reason for this weird result is that for 2-fold CV, training and test datasets both contain less than 70 data, and such "large p, small n" cases cause the problem. To avoid effects of these extreme values made on plot, I will cut them off from my epe2_set and only show the line from p=10 to p=60(green line).
+From the above plot, we can observe that the training error is decreasing when complexity increases, but the EPE for 2-fold CV and 10-fold CV are increasing as the complexity increases, and the speed of increase of 2-fold CV is quicker than that of 10-fold CV.
