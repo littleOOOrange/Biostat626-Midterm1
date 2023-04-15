@@ -20,6 +20,6 @@
 9. Fit full_features training set and selected_features training set on **KNN with K=3**. Get accuracy of 0.9704 and 0.9516, respectively. Also fit the full_features training set on **K=5**, get acc=0.9643
 10. Fit selected_features training set and full_features training set on **SVM with linear kernel**, get acc = 0.9669 and 0.9834, respectively.
 11. Write a majority vote function to ensemble results from many models’ prediction results. Also checking how many different labels between two prediction results.
-12. Fit full-features training set on **Logistic Regression** again with regularization with **Lasso regression**, get acc=0.9813
+12. Using cv.glmnet() to fit full-features training set on **Logistic Regression** again with regularization with **Lasso regression**, get acc=0.9813
 13. Fit full_features training set on **SVM with radial kernel and polynomial kernel with degree=2**, get acc=0.976 and 0.9734
 14. **Ensemble prediction results** from **9** models: full_features fitting on RF, RF with n_tree=100, RF with n_tree=800, KNN with K=3, SVM with linear, radial and polynomial kernel, LR with Lasso regression, and selected features fitting on RF with n_tree = 100. Using the majority vote to get the final prediction result.
